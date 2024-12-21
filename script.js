@@ -6,7 +6,7 @@ const paddleWidth = 10;
 const paddleHeight = 100;
 let player1Y = canvas.height / 2 - paddleHeight / 2;
 let player2Y = canvas.height / 2 - paddleHeight / 2;
-const paddleSpeed = 5;
+const paddleSpeed = 5.5; // Adjust for smoother movement
 
 // Ball variables
 let ballX = canvas.width / 2;
@@ -18,6 +18,18 @@ let ballSpeedY = 5;
 // Score variables
 let player1Score = 0;
 let player2Score = 0;
+
+// AI variables
+const aiSpeed = 4.5; // Adjust for AI difficulty
+
+// --- Movement tracking variables ---
+let upPressed = false;
+let downPressed = false;
+
+let wPressed = false;
+let sPressed = false;
+
+// --- Functions ---
 
 // Function to draw paddles
 function drawPaddle(x, y, width, height) {
@@ -40,36 +52,23 @@ function drawScores() {
     ctx.fillText(player2Score, 3 * canvas.width / 4, 50);
 }
 
-// Function to handle paddle movement
-function movePaddles() {
-    // Player 1 (Up: W, Down: S)
-    window.addEventListener('keydown', (event) => {
-        if (event.key === 'w' || event.key === 'W') {
-            player1Y -= paddleSpeed;
-        } else if (event.key === 's' || event.key === 'S') {
-            player1Y += paddleSpeed;
-        }
-    });
-
-    // Player 2 (Up: Up Arrow, Down: Down Arrow)
-    window.addEventListener('keydown', (event) => {
-        if (event.key === 'ArrowUp') {
-            player2Y -= paddleSpeed;
-        } else if (event.key === 'ArrowDown') {
-            player2Y += paddleSpeed;
-        }
-    });
-    // Keep paddles within the canvas
-    if (player1Y < 0) {
-        player1Y = 0;
-    } else if (player1Y > canvas.height - paddleHeight) {
-        player1Y = canvas.height - paddleHeight;
+// Function to handle player 1 paddle movement, removing the direct control using 'w' and 's'
+function movePlayer1Paddle() {
+    if (wPressed && player1Y > 0) {
+        player1Y -= paddleSpeed;
+    } else if (sPressed && player1Y + paddleHeight < canvas.height) {
+        player1Y += paddleSpeed;
     }
+}
 
-    if (player2Y < 0) {
-        player2Y = 0;
-    } else if (player2Y > canvas.height - paddleHeight) {
-        player2Y = canvas.height - paddleHeight;
+// Function to handle AI (player 2) paddle movement
+function movePlayer2Paddle() {
+    // Basic AI: Follow the ball's Y position
+    let paddleCenter = player2Y + paddleHeight / 2;
+    if (ballY > paddleCenter + paddleHeight / 4 && player2Y < canvas.height - paddleHeight) {
+      player2Y += aiSpeed;
+    } else if (ballY < paddleCenter - paddleHeight / 4 && player2Y > 0) {
+      player2Y -= aiSpeed;
     }
 }
 
@@ -109,6 +108,31 @@ function resetBall() {
     ballSpeedY = Math.random() * 10 - 5; // Randomize initial vertical speed
 }
 
+// --- Event Listeners for paddle movement ---
+window.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowUp') {
+        upPressed = true;
+    } else if (event.key === 'ArrowDown') {
+        downPressed = true;
+    } else if (event.key === 'w' || event.key === 'W') {
+        wPressed = true;
+    } else if (event.key === 's' || event.key === 'S') {
+        sPressed = true;
+    }
+});
+
+window.addEventListener('keyup', (event) => {
+    if (event.key === 'ArrowUp') {
+        upPressed = false;
+    } else if (event.key === 'ArrowDown') {
+        downPressed = false;
+    } else if (event.key === 'w' || event.key === 'W') {
+        wPressed = false;
+    } else if (event.key === 's' || event.key === 'S') {
+        sPressed = false;
+    }
+});
+
 // Main game loop
 function gameLoop() {
     // Clear the canvas
@@ -121,7 +145,8 @@ function gameLoop() {
     drawScores();
 
     // Handle movement
-    movePaddles();
+    movePlayer1Paddle();
+    movePlayer2Paddle(); // AI paddle movement
     moveBall();
 
     // Request the next frame
